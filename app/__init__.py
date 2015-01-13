@@ -13,7 +13,7 @@ logger = logging.getLogger('debade-courier')
 
 class ZeroMQ:
     
-    def __init__(self, addr='ipc:///var/run/debade-courier.ipc'):
+    def __init__(self, addr):
         self.addr = addr
         try:
             self.ctx = zmq.Context()
@@ -60,10 +60,15 @@ class Rabbit:
             logger.debug("MQ[%s] <= %r" % (self.name, body))
         except Exception as e:
             self.connect()
-    
+
+def usage():
+    print "Usage: debade-courier -c <config-file> <zmq-address>\n"
+    print "    <config-file>: path to config file in YAML format, e.g. /etc/debade/courier.yml"
+    print "    <zmq-address>: ZeroMQ address to listen, e.g. ipc:///path/to/ipc, tcp://0.0.0.0:3333"
+
 def main():
 
-    # debade-courier -c /etc/debade-courier.yml
+    # debade-courier -c /etc/debade-courier.yml <>
     
     conf_file = '/etc/debade-courier.yml'
     
@@ -71,8 +76,13 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], "c:v", ["config="])
     except getopt.GetoptError as e:
         # print help information and exit:
-        print str(e) # will print something like "option -a not recognized"
+        usage()
         sys.exit(2)
+
+    if len(args) > 0:
+        addr = args[0]
+    else:
+        addr = "tcp://127.0.0.1:3333"
 
     verbose = 0
     for o, a in opts:
@@ -82,7 +92,7 @@ def main():
             verbose+=1
         else:
             assert False, "unhandled option"
-
+    
     if not os.path.isfile(conf_file):    
         print("missing config file: %s" % conf_file)
         sys.exit(2)
@@ -109,10 +119,10 @@ def main():
     zmq_conf = conf['zmq']
     servers_conf = conf['servers']
 
-    z = ZeroMQ(addr=zmq_conf['addr'])
+    z = ZeroMQ(addr=addr)
 
     # waiting for message
-    logger.info("Waiting for debade request...")
+    logger.info("Waiting for debade request at %s" % addr)
 
     mq = {}
 

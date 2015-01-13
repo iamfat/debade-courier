@@ -1,7 +1,11 @@
-zmq:
-  addr: ipc:///var/run/debade/courier.ipc
 servers:
-  my_server:
+  my_server1:
+    host: <host>
+    port: <port>
+    username: <username>
+    password: <password>
+    exchange: <exchange>
+  my_server2:
     host: <host>
     port: <port>
     username: <username>
