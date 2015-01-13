@@ -116,7 +116,6 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
-    zmq_conf = conf['zmq']
     servers_conf = conf['servers']
 
     z = ZeroMQ(addr=addr)
