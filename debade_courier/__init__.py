@@ -8,6 +8,7 @@ import pika
 import zmq
 import yaml
 import logging
+import json
 
 logger = logging.getLogger('debade-courier')
 
@@ -56,9 +57,10 @@ class Rabbit:
     
     def publish(self, routing_key, body):
         try:
-            self.ch.basic_publish(exchange=self.exchange, routing_key=routing_key, body=body)
+            self.ch.basic_publish(exchange=self.exchange, routing_key=routing_key, body=json.dumps(body))
             logger.debug("MQ[%s] <= %r" % (self.name, body))
         except Exception as e:
+            logger.error("MQ[%s] error: %s" % (self.name, str(e)))
             self.connect()
 
 def usage():

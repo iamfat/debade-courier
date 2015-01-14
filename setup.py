@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='debade-courier',
 
-    version='0.1.0',
+    version='0.1.1',
 
     description='DeBaDe Courier',
 
@@ -32,13 +32,13 @@ setup(
 
     keywords='debade courier',
 
-    packages=['app'],
+    packages=['debade_courier'],
 
     install_requires=["pika", "pyyaml", "pyzmq"],
 
     entry_points={
         'console_scripts': [
-            'debade-courier=app:main',
+            'debade-courier=debade_courier:main',
         ],
     },
 )
