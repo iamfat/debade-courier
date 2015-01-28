@@ -129,8 +129,10 @@ def main():
 
     while True:
         o = z.recv()
+        if 'queue' not in o:
+            continue
+
         q = o['queue']
-        
         if q not in mq :
             if q not in servers_conf:
                 logger.debug("unknown queue:%s! drop it" % q) 
