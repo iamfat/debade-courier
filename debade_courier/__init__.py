@@ -37,22 +37,22 @@ class Rabbit:
             self.ch = self.conn.channel()
             self.ch.exchange_declare(
                 exchange=self.exchange, 
-                type='fanout', 
+                type=self.type, 
                 durable=False, 
                 auto_delete=True )
         except pika.exceptions.AMQPConnectionError as e:
             logger.error("MQ[%s] error: %s" % (self.name, str(e)))
+        except:
             return
             
-    def __init__(self, name,
-        host='127.0.0.1', port=None, 
-        username=None, password=None, 
-        virtual_host=None, exchange='default'):
+    def __init__(self, name, host, port, username, password, 
+                exchange, type):
         self.name = name
         self.conn_params = pika.ConnectionParameters(
                 host=host, port=port, 
                 credentials=pika.credentials.PlainCredentials(username=username, password=password))
         self.exchange = exchange
+        self.type = type
         self.connect()
     
     def publish(self, routing_key, body):
@@ -132,18 +132,21 @@ def main():
         if 'queue' not in o:
             continue
 
-        q = o['queue']
+        q = o.get('queue')
         if q not in mq :
             if q not in servers_conf:
                 logger.debug("unknown queue:%s! drop it" % q) 
                 continue
             server_conf = servers_conf[q]
-            mq[q] = Rabbit(name=q, host=server_conf['host'], 
-                port=server_conf['port'], 
-                username=server_conf['username'], password=server_conf['password'], 
-                exchange=server_conf['exchange'])
-            
-        mq[q].publish(routing_key='', body=o['data'])
+            mq[q] = Rabbit(name=q, 
+                        host=server_conf.get('host', '127.0.0.1'), 
+                        port=server_conf.get('port'), 
+                        username=server_conf.get('username'), 
+                        password=server_conf.get('password'), 
+                        exchange=server_conf.get('exchange', 'default'), 
+                        type=server_conf.get('type', 'fanout'))
+        
+        mq[q].publish(routing_key=o.get('routing', ''), body=o.get('data', ''))
 
 
 if __name__ == "__main__":
