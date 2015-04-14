@@ -40,8 +40,10 @@ class Rabbit:
                 type=self.type, 
                 durable=False, 
                 auto_delete=True )
+            # connect 成功之后, 先看看有没有要继续发送的消息
+            self.flush()
         except pika.exceptions.AMQPConnectionError as e:
-            logger.error("MQ[%s] error: %s" % (self.name, str(e)))
+            logger.error("MQ[%s] connect error: %s" % (self.name, str(e)))
         except:
             return
             
@@ -49,19 +51,36 @@ class Rabbit:
                 exchange, type):
         self.name = name
         self.conn_params = pika.ConnectionParameters(
-                host=host, port=port, 
-                credentials=pika.credentials.PlainCredentials(username=username, password=password))
+            host=host, port=port, 
+            credentials=pika.credentials.PlainCredentials(
+                username=username, password=password))
         self.exchange = exchange
         self.type = type
+        self.msg_queue = []
         self.connect()
     
+    def flush(self):
+        while self.msg_queue:
+            msg = self.msg_queue[0]
+            routing_key = msg['r']
+            body = json.dumps(msg['b'])
+            try:
+                self.ch.basic_publish(exchange=self.exchange, 
+                    routing_key=routing_key, body=body)
+                logger.debug("MQ[%s] <= %r" % (self.name, body))
+                 # 只有在一切正确没有异常的情况下再从消息队列中清除该消息
+                self.msg_queue.pop(0)
+            except Exception as e:
+                logger.error("MQ[%s] publish error: %s" % (self.name, str(e)))
+                msg['f'] += 1
+                # 发送失败三次就洗洗睡吧
+                msg['f'] < 3 or self.msg_queue.pop(0)
+                self.connect()
+        
     def publish(self, routing_key, body):
-        try:
-            self.ch.basic_publish(exchange=self.exchange, routing_key=routing_key, body=json.dumps(body))
-            logger.debug("MQ[%s] <= %r" % (self.name, body))
-        except Exception as e:
-            logger.error("MQ[%s] error: %s" % (self.name, str(e)))
-            self.connect()
+        # 首先先将消息放入队列, 然后再flush
+        self.msg_queue.append({'r':routing_key, 'b':body, 'f':0})
+        self.flush()
 
 def usage():
     print "Usage: debade-courier -c <config-file> <zmq-address>\n"
