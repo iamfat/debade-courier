@@ -26,7 +26,7 @@ class ZeroMQ:
     
     def recv(self):
         o = self.sock.recv_json()
-        logger.debug("0MQ => %r" % o)
+        logger.debug("0MQ => %s" % json.dumps(o))
         return o
 
 class Rabbit:
@@ -122,6 +122,9 @@ def main():
     conf = yaml.safe_load(f)
     f.close()
 
+    if 'debug' in conf and conf['debug']==True:
+        verbose = 3
+
     ch = logging.StreamHandler()
     if verbose>0 :
         ch.setLevel(logging.DEBUG)
@@ -165,7 +168,7 @@ def main():
                         exchange=server_conf.get('exchange', 'default'), 
                         type=server_conf.get('type', 'fanout'))
         
-        mq[q].publish(routing_key=o.get('routing', ''), body=o.get('data', ''))
+        mq[q].publish(routing_key=o.get('routing', ''), body=o.get('data', {}))
 
 
 if __name__ == "__main__":
