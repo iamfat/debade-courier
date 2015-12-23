@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='debade-courier',
 
-    version='0.2.2',
+    version='0.3.0',
 
     description='DeBaDe Courier',
 

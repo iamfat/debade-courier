@@ -13,3 +13,4 @@ servers:
     password: <password>
     exchange: <exchange>
     type: topic
+debug: true
