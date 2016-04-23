@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import sys
 import os
@@ -11,8 +13,9 @@ import yaml
 import logging
 import json
 
-logger = logging.getLogger('debade-courier')
+__version__ = '0.3.0';
 
+logger = logging.getLogger('debade-courier')
 
 class ZeroMQ(object):
     
@@ -28,7 +31,7 @@ class ZeroMQ(object):
 
     def recv(self):
         o = self.sock.recv_json()
-        logger.debug('0MQ => {body}'.format(body=json.dumps(o)))
+        logger.debug('0MQ => {body}'.format(body=json.dumps(o, ensure_ascii=False)))
         return o
 
 
@@ -65,18 +68,18 @@ class Rabbit(object):
         while self.msg_queue:
             msg = self.msg_queue[0]
             routing_key = msg['r']
-            body = json.dumps(msg['b'])
+            body = json.dumps(msg['b'], ensure_ascii=False)
             try:
                 self.ch.basic_publish(exchange=self.exchange,
                     routing_key=routing_key,
                     body=body)
 
-                logger.debug('MQ[{name}] <= {body}'.format(name=self.name, body=repr(body)))
+                logger.debug('MQ[{name}] <= {body}'.format(name=self.name, body=body))
 
                  # 只有在一切正确没有异常的情况下再从消息队列中清除该消息
                 self.msg_queue.pop(0)
             except Exception as e:
-                logger.error('MQ[{name}] publish error: {body}'.format(name=self.name, body=str(e)))
+                logger.error('MQ[{name}] publish error: {body}'.format(name=self.name, body=e))
                 msg['f'] += 1
                 # 发送失败三次就洗洗睡吧
                 msg['f'] < 3 or self.msg_queue.pop(0)
@@ -103,7 +106,7 @@ def main():
     debug = False
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'c:d', ['config=', 'debug'])
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'c:v', ['config=', 'verbose'])
     except getopt.GetoptError as e:
         # print help information and exit:
         usage()
@@ -117,7 +120,7 @@ def main():
         if option in ('-c', '--config'):
             config_file = argument
 
-        if option in('-d', '--debug'):
+        if option in('-v', '--verbose'):
             debug = True
 
     if not os.path.isfile(config_file):
@@ -148,26 +151,28 @@ def main():
     mq = {}
 
     while True:
-        o = z.recv()
-        if 'queue' not in o:
-            continue
-
-        q = o.get('queue')
-        if q not in mq:
-            if q not in servers_conf:
-                logger.debug('unknown queue:[{queue}]! drop it'.format(queue=q))
+        try:
+            o = z.recv()
+            if 'queue' not in o:
                 continue
-            server_conf = servers_conf[q]
-            mq[q] = Rabbit(name=q, 
-                        host=server_conf.get('host', '127.0.0.1'), 
-                        port=server_conf.get('port'), 
-                        username=server_conf.get('username'), 
-                        password=server_conf.get('password'), 
-                        exchange=server_conf.get('exchange', 'default'), 
-                        type=server_conf.get('type', 'fanout'))
-        
-        mq[q].publish(routing_key=o.get('routing', ''), body=o.get('data', {}))
 
+            q = o.get('queue')
+            if q not in mq:
+                if q not in servers_conf:
+                    logger.debug('unknown queue:[{queue}]! drop it'.format(queue=q))
+                    continue
+                server_conf = servers_conf[q]
+                mq[q] = Rabbit(name=q, 
+                            host=server_conf.get('host', '127.0.0.1'), 
+                            port=server_conf.get('port'), 
+                            username=server_conf.get('username'), 
+                            password=server_conf.get('password'), 
+                            exchange=server_conf.get('exchange', 'default'), 
+                            type=server_conf.get('type', 'fanout'))
+        
+            mq[q].publish(routing_key=o.get('routing', ''), body=o.get('data', {}))
+        except KeyboardInterrupt:
+            break
 
 if __name__ == '__main__':
     main()
