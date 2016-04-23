@@ -1,9 +1,9 @@
 FROM alpine:3.3
 
 ADD . /app
-RUN apk add --no-cache py-setuptools gcc python-dev libzmq musl-dev g++ \
+RUN apk add --no-cache libzmq py-setuptools gcc python-dev zeromq-dev musl-dev g++ \
     && cd /app && python setup.py install \
-    && apk del gcc python-dev libzmq musl-dev g++ && rm -rf /root/.cache \
+    && apk del gcc python-dev zeromq-dev musl-dev g++ && rm -rf /root/.cache \
     && mkdir -p /etc/debade
 
 VOLUME ["/etc/debade"]
