@@ -51,7 +51,7 @@ class Queue(object):
                  # 只有在一切正确没有异常的情况下再从消息队列中清除该消息
                 self.msg_queue.pop(0)
             except Exception as e:
-                self.logger.error('MQ[{name}] publish error: {body}'.format(name=self.name, body=e))
+                self.logger.error('MQ[{name}] push error: {body}'.format(name=self.name, body=e))
                 msg['f'] += 1
                 # 发送失败三次就洗洗睡吧
                 msg['f'] < 3 or self.msg_queue.pop(0)
