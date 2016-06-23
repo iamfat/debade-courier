@@ -17,6 +17,7 @@ class Queue(object):
         self.ctx = zmq.Context()
         self.sock = self.ctx.socket(zmq.PUB)
         self.sock.bind(self.address)
+        self.logger.debug('MQ binded to {address}'.format(address=self.address))
 
     def push(self, routing_key, data):
         # 首先先将消息放入队列, 然后再flush
