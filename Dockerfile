@@ -1,4 +1,4 @@
-FROM alpine:3.3
+FROM alpine:3.4
 
 ADD . /app
 RUN apk add --no-cache libzmq py-setuptools gcc python-dev zeromq-dev musl-dev g++ \
