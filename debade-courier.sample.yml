@@ -1,5 +1,6 @@
 servers:
   my_server1:
+    driver: rabbitmq
     host: <host>
     port: <port>
     username: <username>
@@ -7,6 +8,7 @@ servers:
     exchange: <exchange>
     type: fanout
   my_server2:
+    driver: beanstalk
     host: <host>
     port: <port>
     username: <username>
