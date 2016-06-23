@@ -30,7 +30,7 @@ def find_version(*file_paths):
     raise RuntimeError("Unable to find version string.")
 
 install_requires = [
-    "pika", "pyyaml", "pyzmq", "pybeanstalk"
+    "pika", "pyyaml", "pyzmq", "beanstalkclient"
 ]
 
 setup(

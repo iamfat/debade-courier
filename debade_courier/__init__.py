@@ -89,12 +89,12 @@ def main():
                     continue
                 server_conf = servers_conf[q]
                 driver = server_conf.get('driver', 'rabbitmq')
-                mq[q] = importlib.import_module('.' + driver, __name__).Queue(name=q, 
+                mq[q] = importlib.import_module('.mq.' + driver, __name__).Queue(name=q, 
                     logger=logger, conf=server_conf)
 
             if q in mq:
                 mq[q].push(routing_key=o.get('routing', ''), 
-                    body=o.get('data', {}))
+                    data=o.get('data', {}))
         except KeyboardInterrupt:
             break
 

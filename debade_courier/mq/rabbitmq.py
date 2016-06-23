@@ -40,7 +40,7 @@ class Queue(object):
         while self.msg_queue:
             msg = self.msg_queue[0]
             routing_key = msg['r']
-            body = json.dumps(msg['b'], ensure_ascii=False)
+            body = json.dumps(msg['d'], ensure_ascii=False)
             try:
                 self.ch.basic_publish(exchange=self.exchange,
                     routing_key=routing_key,
@@ -57,9 +57,9 @@ class Queue(object):
                 msg['f'] < 3 or self.msg_queue.pop(0)
                 self.connect()
         
-    def push(self, routing_key, body):
+    def push(self, routing_key, data):
         # 首先先将消息放入队列, 然后再flush
-        self.msg_queue.append({'r':routing_key, 'b':body, 'f':0})
+        self.msg_queue.append({'r':routing_key, 'd':data, 'f':0})
         self.flush()
 
 
