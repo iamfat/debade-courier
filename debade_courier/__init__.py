@@ -50,7 +50,7 @@ def main():
             debug = True
 
     if not os.path.isfile(config_file):
-        print('missing config file: {config_file}'.format(conf_file=config_file))
+        print('missing config file: {config_file}'.format(config_file=config_file))
         sys.exit(2)
     else:
         with open(config_file) as f:
@@ -67,6 +67,7 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
+    version = config.get('version', '1')
     servers_conf = config['servers']
 
     z = ZeroMQ(address=address, logger=logger)
@@ -82,19 +83,27 @@ def main():
             if 'queue' not in o:
                 continue
 
-            q = o.get('queue')
-            if q not in mq:
-                if q not in servers_conf:
-                    logger.debug('unknown queue:[{queue}]! drop it'.format(queue=q))
-                    continue
-                server_conf = servers_conf[q]
-                driver = server_conf.get('driver', 'rabbitmq')
-                mq[q] = importlib.import_module('.mq.' + driver, __name__).Queue(name=q, 
-                    logger=logger, conf=server_conf)
+            def mq_push(name, conf, routing_key, data):
+                if name not in mq:
+                    driver = conf.get('driver', 'zmq')
+                    mq[name] = importlib.import_module(
+                        '.mq.' + driver, __name__).Queue(
+                        name=name, logger=logger, conf=conf)
+                mq[name].push(routing_key=routing_key, data=data)
 
-            if q in mq:
-                mq[q].push(routing_key=o.get('routing', ''), 
-                    data=o.get('data', {}))
+            q = o.get('queue', 'default')
+            if q not in servers_conf:
+                logger.debug('unknown queue:[{queue}]! drop it'.format(queue=q))
+                continue
+
+            if version == '2':
+                for index,conf in enumerate(servers_conf[q]):
+                    mq_push(name=q+':'+str(index), conf=conf,
+                        routing_key=o.get('routing', ''), data=o.get('data', {}))
+            else:
+                mq_push(name=q, conf=servers_conf[q],
+                    routing_key=o.get('routing', ''), data=o.get('data', {}))
+
         except KeyboardInterrupt:
             break
 

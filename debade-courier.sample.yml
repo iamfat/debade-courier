@@ -1,18 +1,19 @@
+version: '2'
 servers:
-  my_server1:
-    driver: rabbitmq
-    host: <host>
-    port: <port>
-    username: <username>
-    password: <password>
-    exchange: <exchange>
-    type: fanout
-  my_server2:
-    driver: beanstalk
-    host: <host>
-    port: <port>
-    username: <username>
-    password: <password>
-    exchange: <exchange>
-    type: topic
+  queue1:
+    - driver: rabbitmq
+      host: <host>
+      port: <port>
+      username: <username>
+      password: <password>
+      exchange: <exchange>
+      type: fanout
+    - driver: zmq
+      host: <host>
+      port: <port>
+  queue2:
+    - driver: beanstalk
+      host: <host>
+      port: <port>
+      tube: <tube>
 debug: true
